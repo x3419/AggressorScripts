@@ -1,0 +1,176 @@
+sub addTwoValues {
+	println($1 + $2);
+}
+
+addTwoValues("3", 55.0);
+
+
+command foo {
+	println("\c3$1 \c4$2 \U\cC$3");
+}
+
+
+popup pgraph {
+       	menu "&Layout" {
+		item "&Circle"    { graph_layout($1, "circle"); }
+		item "&Stack"     { graph_layout($1, "stack"); }
+		menu "&Tree" {
+			item "&Bottom" { graph_layout($1, "tree-bottom"); }
+			item "&Left"   { graph_layout($1, "tree-left"); }
+			item "&Right"  { graph_layout($1, "tree-right"); }
+			item "&Top"    { graph_layout($1, "tree-top"); }
+		}
+		separator();
+		item "&None" { graph_layout($1, "none"); }
+	}
+}
+menubar("&Test",      "pgraph");
+
+# sync all downloads
+command ga {
+	local('$download $lpath $name $count');
+	foreach $count => $download (downloads()) {
+		($lpath, $name) = values($download, @("lpath", "name"));
+		
+		println($lpath);
+		println($name);
+		sync_download($lpath, script_resource("file $+ .$count"), lambda({ 
+			println("Downloaded $1 [ $+ $name $+ ]"); 
+			
+		}, \$name));
+	}
+}
+
+
+popup filebrowser {
+	
+	item "&View" {
+		local('$file');
+		
+		sub callback {
+			println("Dialog was actioned. Button: $2 Values: $3");
+		}
+
+		$fullPath = "$2 $+ \\" . $3[0];
+		bdownload($1, "$fullPath");
+		show_message("test");
+
+		$fileContent = "";
+		$localFilePath = "";
+
+	
+
+		#if (sizeof("$fileContent") > 200000000){
+		#	show_message("File greater than 200mb, this is probably a bad idea! Quitting");
+		#	return 0;
+		#}
+
+		#println("$fileContent");
+		#deleteFile(script_resource($3[0])); # note: this doesn't work for me on kali, not sure why
+
+		#}, \"test"));
+
+		local('$download $lpath $name $count');
+
+
+		$itercount = 0;
+		foreach $count => $download (downloads()) {
+				($lpath, $rpath, $name) = values($download, @("lpath", "path", "name"));
+				
+
+				#println("Test $lpath");
+				#println(script_resource("file $+ .$count"));
+				#println("$2 $+ \\" . $3[0]);
+				#println("$rpath");
+
+				if (("$2 $+ \\" . $3[0]) eq $rpath . $name){
+
+					sync_download($lpath, script_resource("file $+ .$count"), lambda({ 
+
+						if ($itercount > 0){
+							return 1;
+						}
+
+						println("Itercount: $itercount");
+
+						
+						println("Downloaded $1 [ $+ $name $+ ]"); 
+						
+						$handle = openf("$1");
+						$fileContent = readb($handle, -1);
+						println("$fileContent");
+
+						$dialog = dialog("File Viewer", %(test => "$fileContent", uri => "/download/file.ext", port => 80, mimetype => "automatic"), &callback);
+		
+						drow_text_big($dialog, "test", "");
+						dialog_show($dialog);
+						$itercount = $itercount + 1;
+
+						return 1;
+
+					}, \$name));
+				}	
+				
+		}
+		
+
+		
+		
+	}	
+
+	item "&Copy" {
+		if (size($3) > 0) {
+			add_to_clipboard("$2 $+ \\" . $3[0]);
+		}
+	}
+
+	item "&Download" {
+		local('$file');
+		foreach $file ($3) {
+			binput($1, "download $2 $+ \\ $+ $file");
+			bdownload($1, "$2 $+ \\ $+ $file");
+		}
+	}
+
+	item "&Execute" {
+		prompt_text("Arguments?", "", lambda({
+			foreach $file ($files) {
+				binput($bid, "execute $folder $+ \\ $+ $file" . iff($1 ne "", " $1"));
+				bexecute($bid, "$folder $+ \\ $+ $file" . iff($1 ne "", " $1"));
+			}
+		}, $bid => $1, $folder => $2, $files => $3));
+	}
+        
+
+	separator();
+
+	item "D&elete" {
+		local('$file @paths');
+		foreach $file ($3) {
+			push(@paths, "$2 $+ \\ $+ $file");
+		}
+
+		prompt_confirm("This action will delete:\n\n" . join("\n", @paths) . "\n\nPress 'Yes' to confirm this action", "SCARY ACTION!!!!", lambda({
+			local('$path');
+			foreach $path (@paths) {
+				binput($bid, "rm $path");
+				brm($bid, $path);
+			}
+
+			# force a refresh on the file browser.
+			[$browser ls_refresh: $folder];
+		}, \@paths, $bid => $1, $browser => $4, $folder => $2));
+	}	
+}
+
+
+
+
+
+
+
+
+
+
+
+

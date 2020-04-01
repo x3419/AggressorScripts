@@ -1,0 +1,3 @@
+alias cat { 
+	bexecute_assembly($1, "tools/Cat.exe", $2); 
+}
