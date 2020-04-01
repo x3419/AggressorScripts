@@ -53,20 +53,18 @@ popup filebrowser {
 
 		$fullPath = "$2 $+ \\" . $3[0];
 		bdownload($1, "$fullPath");
-		show_message("test");
+
+		show_message("File download requested, press OK to view.");
 
 		$fileContent = "";
 		$localFilePath = "";
 
 	
 
-		#if (sizeof("$fileContent") > 200000000){
-		#	show_message("File greater than 200mb, this is probably a bad idea! Quitting");
-		#	return 0;
-		#}
+		
 
 		#println("$fileContent");
-		#deleteFile(script_resource($3[0])); # note: this doesn't work for me on kali, not sure why
+		
 
 		#}, \"test"));
 
@@ -88,17 +86,21 @@ popup filebrowser {
 					sync_download($lpath, script_resource("file $+ .$count"), lambda({ 
 
 						if ($itercount > 0){
+							deleteFile($1);
 							return 1;
 						}
 
-						println("Itercount: $itercount");
 
-						
-						println("Downloaded $1 [ $+ $name $+ ]"); 
 						
 						$handle = openf("$1");
 						$fileContent = readb($handle, -1);
-						println("$fileContent");
+
+						#if (sizeof("$fileContent") > 200000000){
+						#	show_message("File greater than 200mb, this is probably a bad idea! Quitting");
+						#	return 0;
+						#}						
+
+						deleteFile($1); # note: this doesn't work for me on kali, not sure why
 
 						$dialog = dialog("File Viewer", %(test => "$fileContent", uri => "/download/file.ext", port => 80, mimetype => "automatic"), &callback);
 		
@@ -162,7 +164,6 @@ popup filebrowser {
 		}, \@paths, $bid => $1, $browser => $4, $folder => $2));
 	}	
 }
-
 
 
 
